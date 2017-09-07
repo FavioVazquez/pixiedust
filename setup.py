@@ -1,18 +1,13 @@
 from setuptools import setup, find_packages
-setup(name='pixiedust',
+setup(name='pixiedust-optimus',
 	  version='1.0.11',
 	  description='Productivity library for Spark Python Notebook',
-	  url='https://github.com/ibm-watson-data-lab/pixiedust',
+	  url='https://github.com/FavioVazquez/pixiedust',
 	  install_requires=['mpld3','lxml','geojson'],
-	  author='David Taieb',
+	  author='David Taieb - Favio Vazquez',
 	  author_email='david_taieb@us.ibm.com',
 	  license='Apache 2.0',
 	  packages=find_packages(exclude=('tests', 'tests.*')),
 	  include_package_data=True,
-	  zip_safe=False,
-	  entry_points={
-		  'console_scripts': [
-			  'jupyter-pixiedust = install.pixiedustapp:main'
-		  ]		  
-	  }
+	  zip_safe=False
 )
