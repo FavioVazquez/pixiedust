@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
-setup(name='pixioptimus',
-	  version='1.0.10',
+setup(name='pixiedust-optimus',
+	  version='1.2.4',
 	  description='Productivity library for Spark Python Notebook',
 	  url='https://github.com/FavioVazquez/pixiedust-optimus',
 	  install_requires=['mpld3','lxml','geojson'],
