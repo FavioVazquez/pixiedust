@@ -28,7 +28,7 @@ with warnings.catch_warnings():
         ProxyInteractiveShell.instance()   
 
     #shortcut to logging
-    import pixiedust_optimus.utils.pdLogging as pdLogging
+    import pixiedust.utils.pdLogging as pdLogging
     logger = pdLogging.getPixiedustLogger()
     getLogger = pdLogging.getLogger
 
