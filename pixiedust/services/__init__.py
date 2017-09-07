@@ -24,7 +24,7 @@ import pixiedust.utils.dataFrameMisc as dataFrameMisc
 class StashMeta(DisplayHandlerMeta):
     @addId
     def getMenuInfo(self,entity, dataHandler):
-        if dataFrameMisc.isPySparkDataFrame(entity):
+        if dataFrameMisc.isPySparkDataFrame(entity) == False:
             return [
                 {"categoryId": "Download", "title": "Stash to Cloudant", "icon": "fa-cloud", "id": "stashCloudant"}
             ]
