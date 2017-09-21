@@ -75,9 +75,6 @@ class MapViewDisplay(MapBoxBaseDisplay):
                 return self.renderTemplate("tokenerror.html")
 
         body = self.renderMapView(mbtoken)
-        if self.isStreaming:
-            self.commId = str(uuid.uuid4())
-            activesStreamingEntities[self.options.get("cell_id")] = self.entity
 
         return self.renderTemplate("iframesrcdoc.html", body=body, prefwidth=self.getPreferredOutputWidth(),
                                    prefheight=self.getPreferredOutputHeight())
