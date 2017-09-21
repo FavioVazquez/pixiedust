@@ -56,4 +56,3 @@ class GoogleBaseDisplay(with_metaclass(ABCMeta, BaseChartDisplay)):
               }
             }
         ]
-  
