@@ -61,7 +61,7 @@ with warnings.catch_warnings():
         get_ipython().user_ns["display"]=display.display
 
         from pixiedust.utils.sampleData import sampleData
-        from pixiedust.utils import checkVersion
+        from pixiedust_optimus.utils import checkVersion
         checkVersion()
     except (NameError):
         #IPython not available we must be in a spark executor
