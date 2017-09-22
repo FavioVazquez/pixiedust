@@ -19,12 +19,10 @@ from pyspark.sql.types import DecimalType
 import time
 import pandas as pd
 from pixiedust.utils import Logger
+from .baseDataHandler import BaseDataHandler
 
 @Logger()
-class PySparkDataFrameDataHandler(object):
-    def __init__(self, options, entity):
-        self.options = options
-        self.entity = entity
+class PySparkDataFrameDataHandler(BaseDataHandler):
 
     def __getattr__(self, name):
         if hasattr(self.entity, name):
@@ -88,7 +86,7 @@ class PySparkDataFrameDataHandler(object):
             aggMapper = {"SUM":"sum", "AVG": "avg", "MIN": "min", "MAX": "max"}
             aggregation = aggMapper.get(aggregation, "count")
 
-            workingDF = workingDF.groupBy(extraFields + xFields).agg(dict([(yField, aggregation) for yField in yFields]))            
+            workingDF = workingDF.groupBy(extraFields + xFields).agg(dict([(yField, aggregation) for yField in yFields]))
             for yField in yFields:
                 workingDF = workingDF.withColumnRenamed("{0}({1})".format(aggregation,yField), yField)
 
@@ -115,7 +113,7 @@ class PySparkDataFrameDataHandler(object):
     corresponding pandas dataframe column to make sure it's not a python object type (which would cause issue during plotting). If that's the case, 
     it cast them as float
     """
-    def toPandas(self, workingDF):        
+    def toPandas(self, workingDF):
         decimals = []
         for f in workingDF.schema.fields:
             if f.dataType.__class__ == DecimalType:
@@ -128,4 +126,3 @@ class PySparkDataFrameDataHandler(object):
                 pdf[y] = pdf[y].astype(float)
 
         return pdf
-
