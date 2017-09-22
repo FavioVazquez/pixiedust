@@ -20,23 +20,26 @@ from pixiedust.utils.environment import Environment as PD_Environment
 
 __all__ = ['addDisplayRunListener', 'display']
 
-#Make sure that matplotlib is running inline
+# Make sure that matplotlib is running inline
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
         get_ipython().run_line_magic("matplotlib", "inline")
     except NameError:
-        #IPython not available we must be in a spark executor
+        # IPython not available we must be in a spark executor
         pass
 
 displayRunListeners = []
+
 
 def addDisplayRunListener(listener):
     global displayRunListeners
     displayRunListeners.append(listener)
 
+
 from .display import *
 from .chart import *
+
 if PD_Environment.hasSpark:
     from .graph import *
 from .table import *
@@ -48,13 +51,14 @@ import uuid
 import pixiedust
 from six import string_types
 
-myLogger=pixiedust.getLogger(__name__ )
+myLogger = pixiedust.getLogger(__name__)
+
 
 def display(entity, **kwargs):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
-        #todo: use ConverterRegistry
+        # todo: use ConverterRegistry
         def toPython(entity):
             from py4j.java_gateway import JavaObject
             if entity is None or not isinstance(entity, JavaObject):
@@ -80,12 +84,12 @@ def display(entity, **kwargs):
         try:
             if "cell_id" in kwargs and "showchrome" not in kwargs and "handlerId" in kwargs:
                 if "gen_tests" in kwargs:
-                    #remove gen_tests from command line
+                    # remove gen_tests from command line
                     import re
                     m = re.search(",\\s*gen_tests\\s*=\\s*'((\\\\'|[^'])*)'", str(callerText), re.IGNORECASE)
                     if m is not None:
-                        callerText = callerText.replace(m.group(0),"")
-                    #generate new prefix
+                        callerText = callerText.replace(m.group(0), "")
+                    # generate new prefix
                     p = re.search(",\\s*prefix\\s*=\\s*'((\\\\'|[^'])*)'", str(callerText), re.IGNORECASE)
                     if p is not None:
                         prefix = ''.join([",prefix='", str(uuid.uuid4())[:8], "'"])
@@ -102,25 +106,28 @@ def display(entity, **kwargs):
                 entity = toPython(entity)
                 scalaKernel = True
 
-            #get a datahandler and displayhandler for this entity
+            # get a datahandler and displayhandler for this entity
             dataHandler = getDataHandler(kwargs, entity)
             selectedHandler = getSelectedHandler(kwargs, entity, dataHandler)
 
-            #notify listeners of a new display Run
+            # notify listeners of a new display Run
             for displayRunListener in displayRunListeners:
                 displayRunListener(entity, kwargs)
-            
-            #check if we have a job monitor id
+
+            # check if we have a job monitor id
             from pixiedust.utils.sparkJobProgressMonitor import progressMonitor
             if progressMonitor:
                 progressMonitor.onDisplayRun(kwargs.get("cell_id"))
-            
+
             myLogger.debug("Creating a new display handler with options {0}: {1}".format(kwargs, selectedHandler))
-            displayHandler = selectedHandler.newDisplayHandler(kwargs,entity)
+            try:
+                displayHandler = selectedHandler.newDisplayHandler(kwargs, entity, dataHandler)
+            except TypeError:
+                displayHandler = selectedHandler.newDisplayHandler(kwargs, entity)
             if displayHandler is None:
                 printEx("Unable to obtain handler")
                 return
-            
+
             displayHandler.handlerMetadata = selectedHandler
             displayHandler.dataHandler = dataHandler
             displayHandler.callerText = callerText

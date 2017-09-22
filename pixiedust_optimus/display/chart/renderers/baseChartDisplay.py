@@ -19,10 +19,10 @@ from abc import abstractmethod, ABCMeta
 import traceback
 import pixiedust
 from collections import OrderedDict
-from six import PY2, with_metaclass,iteritems
+from six import PY2, with_metaclass, iteritems
 from pixiedust.display import addDisplayRunListener
 from pixiedust.display.chart.renderers import PixiedustRenderer
-from pixiedust.utils import cache,Logger
+from pixiedust.utils import cache, Logger
 from pixiedust.utils.shellAccess import ShellAccess
 from .commonOptions import commonOptions as co
 import pandas as pd
@@ -30,25 +30,26 @@ import time
 import inspect
 import re
 
+
 class ShowChartOptionDialog(Exception):
     pass
 
-class WorkingDataCache(with_metaclass( 
-        type("",(type,),{
-            "workingDataCache":{},
-            "__getitem__":lambda cls, key: cls.workingDataCache.get(key),
-            "__setitem__":lambda cls, key,val: cls.workingDataCache.update({key:val}),
-            "__getattr__":lambda cls, key: cls.workingDataCache.get(key),
-            "__setattr__":lambda cls, key, val: cls.workingDataCache.update({key:val})
-        }), object
-    )):
 
+class WorkingDataCache(with_metaclass(
+    type("", (type,), {
+        "workingDataCache": {},
+        "__getitem__": lambda cls, key: cls.workingDataCache.get(key),
+        "__setitem__": lambda cls, key, val: cls.workingDataCache.update({key: val}),
+        "__getattr__": lambda cls, key: cls.workingDataCache.get(key),
+        "__setattr__": lambda cls, key, val: cls.workingDataCache.update({key: val})
+    }), object
+)):
     myLogger = pixiedust.getLogger(__name__)
 
     @staticmethod
     def onNewDisplayRun(entity, options):
         if "cell_id" in options and "showchrome" in options:
-            #User is doing a new display run from the cell, clear the cache as we don't know if the entity has changed
+            # User is doing a new display run from the cell, clear the cache as we don't know if the entity has changed
             WorkingDataCache.removeEntry(options["cell_id"])
 
     @staticmethod
@@ -59,34 +60,38 @@ class WorkingDataCache(with_metaclass(
     def putInCache(options, data, constraints):
         if "cell_id" not in options or "noChartCache" in options:
             return
-        constraints.pop("self",None)
+        constraints.pop("self", None)
         WorkingDataCache[options["cell_id"]] = {
             "data": data,
             "constraints": constraints
         }
 
     @staticmethod
-    def getFromCache(options, constraints ):
+    def getFromCache(options, constraints):
         if "cell_id" not in options:
             return None
-        constraints.pop("self",None)
+        constraints.pop("self", None)
         cellId = options["cell_id"]
         value = WorkingDataCache[cellId]
         if value:
             WorkingDataCache.myLogger.debug("Found cache data for {}. Validating integrity...".format(cellId))
             for item in list(value["constraints"].items()):
                 if item[0] not in constraints or item[1] != constraints[item[0]]:
-                    WorkingDataCache.myLogger.debug("Cache data not validated for key {0}. Expected Value is {1}. Got {2}. Destroying it!...".format(item[0], item[1], constraints[item[0]]))
+                    WorkingDataCache.myLogger.debug(
+                        "Cache data not validated for key {0}. Expected Value is {1}. Got {2}. Destroying it!...".format(
+                            item[0], item[1], constraints[item[0]]))
                     WorkingDataCache.removeEntry(cellId)
                     return None
             WorkingDataCache.myLogger.debug("Cache data validated for {}. Using it!...".format(cellId))
             return value["data"]
         WorkingDataCache.myLogger.debug("No Cache Entry found for {}".format(cellId))
 
-#add a display Run Listener 
-addDisplayRunListener( lambda entity, options: WorkingDataCache.onNewDisplayRun(entity, options) )
 
-#common Chart Options injection decorator
+# add a display Run Listener
+addDisplayRunListener(lambda entity, options: WorkingDataCache.onNewDisplayRun(entity, options))
+
+
+# common Chart Options injection decorator
 def commonChartOptions(func):
     def wrapper(cls, *args, **kwargs):
         commonOptions = []
@@ -106,35 +111,37 @@ def commonChartOptions(func):
                         opts = f(cls, *args, **kwargs)
                         commonOptions += opts
             return commonOptions
-        return commonOptions + func(cls, *args, **kwargs )
+        return commonOptions + func(cls, *args, **kwargs)
+
     wrapper.func = func
     return wrapper
 
+
 @Logger()
 class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
-
     commonOptions = co
 
     def __init__(self, options, entity, dataHandler=None):
-        super(BaseChartDisplay,self).__init__(options,entity,dataHandler)
-        #note: since this class can be subclassed from other module, we need to mark the correct resource module with resModule so there is no mixup
-        self.extraTemplateArgs["resModule"]=BaseChartDisplay.__module__
+        super(BaseChartDisplay, self).__init__(options, entity, dataHandler)
+        # note: since this class can be subclassed from other module, we need to mark the correct resource module with resModule so there is no mixup
+        self.extraTemplateArgs["resModule"] = BaseChartDisplay.__module__
         self.messages = []
 
     """
         Subclass can override: return an array of option metadata
     """
+
     @commonChartOptions
     def getChartOptions(self):
         return []
 
     def validateOptions(self):
-        #validate options
-        chartOptions = self.getChartOptions()   
-        self.debug("chartOptions {}".format(chartOptions)) 
-        ord = OrderedDict([(o["name"],o["validate"]) for o in chartOptions if "validate" in o and "name" in o])
+        # validate options
+        chartOptions = self.getChartOptions()
+        self.debug("chartOptions {}".format(chartOptions))
+        ord = OrderedDict([(o["name"], o["validate"]) for o in chartOptions if "validate" in o and "name" in o])
         remKeys = []
-        for key,value in iteritems(self.options):
+        for key, value in iteritems(self.options):
             if key in ord:
                 values = value.split(",")
                 self.debug("values: {0}".format(values))
@@ -163,14 +170,15 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
         aggregation = self.getAggregation()
         maxRows = self.getMaxRows()
         timeseries = self.options.get("timeseries", 'false')
-        #remember the constraints for this cache, they are the list of variables
+        # remember the constraints for this cache, they are the list of variables
         constraints = locals()
 
-        workingDF = WorkingDataCache.getFromCache(self.options, constraints )
+        workingDF = WorkingDataCache.getFromCache(self.options, constraints)
         if workingDF is None:
-            workingDF = self.dataHandler.getWorkingPandasDataFrame(xFields, yFields, extraFields = extraFields, aggregation=aggregation, maxRows = maxRows )
+            workingDF = self.dataHandler.getWorkingPandasDataFrame(xFields, yFields, extraFields=extraFields,
+                                                                   aggregation=aggregation, maxRows=maxRows)
             WorkingDataCache.putInCache(self.options, workingDF, constraints)
-        
+
         if self.options.get("sortby", None):
             sortby = self.options.get("sortby", None)
             if sortby == 'Keys ASC':
@@ -183,30 +191,30 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
                 workingDF = workingDF.sort_values(yFields, ascending=False)
 
         if self.options.get("debug", None):
-            self.debug("getWorkingPandasDataFrame returns: {0}".format(workingDF) )
-            ShellAccess["workingPDF"] = workingDF    
+            self.debug("getWorkingPandasDataFrame returns: {0}".format(workingDF))
+            ShellAccess["workingPDF"] = workingDF
         return workingDF
 
-    def getWorkingDataSlice1( self, col, sort = False ):
+    def getWorkingDataSlice1(self, col, sort=False):
         colData = self.getWorkingPandasDataFrame()[col].values.tolist()
         if sort:
             return sorted(colData)
         else:
             return colData
 
-    def getWorkingDataSlice( self, col1, col2, sort = False ):
+    def getWorkingDataSlice(self, col1, col2, sort=False):
         col1Data = self.getWorkingPandasDataFrame()[col1].values.tolist()
         col2Data = self.getWorkingPandasDataFrame()[col2].values.tolist()
         if sort:
-            return zip(*sorted(zip(col1Data, col2Data )))
+            return zip(*sorted(zip(col1Data, col2Data)))
         else:
             return [col1Data, col2Data]
 
     @cache(fieldName="maxRows")
     def getMaxRows(self):
-        return int(self.options.get("rowCount","100"))
+        return int(self.options.get("rowCount", "100"))
 
-    #helper method
+    # helper method
     def _getField(self, fieldName):
         if not hasattr(self, fieldName):
             return None
@@ -245,19 +253,21 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
 
     @cache(fieldName="keyFields")
     def getKeyFields(self):
-        """ Get the dataframe field names from metadata (usually specified by the user 
+        """ Get the dataframe field names from metadata (usually specified by the user
         as key fields in the chart option dialog)
 
-        Args: 
+        Args:
             self (class): class that extends BaseChartDisplay
 
-        Returns: 
+        Returns:
             List of strings: dataframe field names
 
         Raises:
             Calls ShowChartOptionDialog() if array is empty
         """
-        fieldNames = self.getFieldNames() # get all field names in data format-independent way
+        fieldNames = self.getFieldNames()  # get all field names in data format-independent way
+        if len(fieldNames) == 0:
+            return []
         if self.supportsKeyFields(self.handlerId) == False:
             return []
         keyFields = []
@@ -280,9 +290,11 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
     def getPreferredDefaultValueFieldCount(self, handlerId):
         return 2
 
-    @cache(fieldName="valueFields")   
+    @cache(fieldName="valueFields")
     def getValueFields(self):
         fieldNames = self.getFieldNames()
+        if len(fieldNames) == 0:
+            return []
         aggregation = self.getAggregation()
         valueFields = []
         valueFieldStr = self.options.get("valueFields")
@@ -297,7 +309,7 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
             raise ShowChartOptionDialog()
         else:
             return numericValueFields
-    
+
     def canRenderChart(self):
         aggregation = self.getAggregation()
         if (aggregation == "COUNT"):
@@ -310,13 +322,13 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
 
     def getDialogInfo(self, handlerId):
         context = self.getChartContext(handlerId)
-        dialogOptions = { "fieldNames":self.getFieldNames(True),\
-            "fieldNamesAndTypes":self.getFieldNamesAndTypes(True, True),\
-            "keyFieldsSupported":self.supportsKeyFields(handlerId),\
-            "legendSupported":self.supportsLegend(handlerId),\
-            "aggregationSupported":self.supportsAggregation(handlerId),\
-            "aggregationOptions":["SUM","AVG","MIN","MAX","COUNT"]\
-        }
+        dialogOptions = {"fieldNames": self.getFieldNames(True), \
+                         "fieldNamesAndTypes": self.getFieldNamesAndTypes(True, True), \
+                         "keyFieldsSupported": self.supportsKeyFields(handlerId), \
+                         "legendSupported": self.supportsLegend(handlerId), \
+                         "aggregationSupported": self.supportsAggregation(handlerId), \
+                         "aggregationOptions": ["SUM", "AVG", "MIN", "MAX", "COUNT"] \
+                         }
         if (context is not None):
             dialogTemplate = context[0]
             dialogOptions.update(context[1])
@@ -326,7 +338,7 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
         return (dialogTemplate, dialogOptions)
 
     def getRendererList(self):
-        return PixiedustRenderer.getRendererList(self.options, self.entity)
+        return PixiedustRenderer.getRendererList(self.options, self.entity, self.isStreaming)
 
     @cache(fieldName="aggregation")
     def getAggregation(self):
@@ -377,9 +389,10 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
             valueFields = self.getValueFields()
         except ShowChartOptionDialog:
             self.dialogBody = self.renderTemplate(dialogTemplate, **dialogOptions)
-            self._addJavascriptTemplate("chartOptions.dialog", optionsDialogBody=self.dialogBody, optionsTitle=optionsTitle, inScript=True)
+            self._addJavascriptTemplate("chartOptions.dialog", optionsDialogBody=self.dialogBody,
+                                        optionsTitle=optionsTitle, inScript=True)
             return
-        
+
         # render
         try:
             self.dialogBody = self.renderTemplate(dialogTemplate, **dialogOptions)
@@ -396,7 +409,7 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
             if setKeyFields and len(keyFields) > 0:
                 self.options["keyFields"] = ",".join(keyFields)
             if setValueFields and len(valueFields) > 0:
-                self.options["valueFields"] = ",".join(valueFields)        
+                self.options["valueFields"] = ",".join(valueFields)
 
             chartFigure = self.doRenderChart()
             if self.options.get("debugFigure", None):
@@ -404,7 +417,8 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
             if self.options.get("nostore_figureOnly", None):
                 self._addHTML(chartFigure)
             else:
-                self._addHTMLTemplate("renderer.html", chartFigure=chartFigure, optionsDialogBody=self.dialogBody, optionsTitle=optionsTitle)
+                self._addHTMLTemplate("renderer.html", chartFigure=chartFigure, optionsDialogBody=self.dialogBody,
+                                      optionsTitle=optionsTitle)
         except Exception as e:
             self.exception("Unexpected error while trying to render BaseChartDisplay")
             errorHTML = """
@@ -415,11 +429,12 @@ class BaseChartDisplay(with_metaclass(ABCMeta, ChartDisplay)):
             if self.options.get("nostore_figureOnly", None):
                 self._addHTML(errorHTML)
             else:
-                self._addHTMLTemplate("renderer.html", chartFigure=errorHTML, optionsDialogBody=self.dialogBody, optionsTitle=optionsTitle)
+                self._addHTMLTemplate("renderer.html", chartFigure=errorHTML, optionsDialogBody=self.dialogBody,
+                                      optionsTitle=optionsTitle)
 
     def logStuff(self):
         try:
-            self.debug("Key Fields: {0}".format(self.getKeyFields()) )
+            self.debug("Key Fields: {0}".format(self.getKeyFields()))
             ShellAccess['keyFields'] = self.getKeyFields()
             self.debug("Key Fields Labels: {0}".format(self.getKeyFieldLabels()))
             self.debug("Value Fields: {0}".format(self.getValueFields()))
