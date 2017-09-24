@@ -1,22 +1,11 @@
-# PixieDust
+# PixieDust_Optimus
 
-[![PyPI version](https://badge.fury.io/py/pixiedust.svg)](https://badge.fury.io/py/pixiedust)
+[![PyPI version](https://badge.fury.io/py/pixiedust-optimus.svg)](https://badge.fury.io/py/pixiedust-optimus)
 [![Build Status](https://travis-ci.org/ibm-watson-data-lab/pixiedust.svg?branch=master)](https://travis-ci.org/ibm-watson-data-lab/pixiedust)  
 
 PixieDust is a productivity tool for Python or Scala notebooks, which lets a developer encapsulate business logic into something easy for your customers to consume.
+This version is for the Optimus fork.
 
-## Why you need it
-
-Notebooks are a powerful tool for fast and flexible data analysis. But the learning curve is steep.
-
-Python data science notebooks were first popularized in academia, and there are some formalities to work through before you can get to your analysis. For example, in a Python interactive notebook, a mundane task like creating a simple chart or saving data into a persistence repository requires mastery of complex code like this [matplotlib](http://matplotlib.org/) snippet:
-
-![All this for a chart?](https://developer.ibm.com/wp-content/uploads/sites/85/2016/10/hairymatplotlib.png)<br>
-*All this for a chart?*
-
-Once you do create a notebook that provides great data insights, it&#39;s hard to share with business users, who don't want to slog through all that dry, hard-to-read code, much less tweak it and collaborate.
-
-PixieDust to the rescue. 
 
 ## What is PixieDust?
 
@@ -44,18 +33,13 @@ PixieDust's current capabilities include:
 
 - **Extensibility.** Create your own visualizations or apps using the PixieDust extensibility APIs. If you know html and css, you can write and deliver amazing graphics without forcing notebook users to type one line of code. Use the shape of the data to control when PixieDust shows your visualization in a menu.
 
-- **Export.** Notebook users can download data to .csv, HTML, JSON, etc. locally on your laptop or into a variety of back-end data sources, like Cloudant, dashDB, GraphDB, etc...
+- **Export.** Notebook users can download data to .csv, HTML, JSON, etc. locally on your laptop 
 
-   ![save as options](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2016/07/pd_download.png)
 - **Scala Bridge.** Use Scala directly in your Python notebook. Variables are automatically transfered from Python to Scala and vice-versa.   [Learn more](https://ibm-watson-data-lab.github.io/pixiedust/scalabridge.html).
 
   > **Or start in a Scala notebook.** As mentioned, all these PixieDust features work not only in Python, but in Scala too. So if you prefer Scala, you'll soon be able to start there and use PixieDust to insert sophisticated Python graphic options within your Scala notebook. Instructions coming soon.
 
 - **Spark progress monitor.** Track the status of your Spark job. No more waiting in the dark. Notebook users can now see how a cell's code is running behind the scenes.
-
-Watch this video to see PixieDust in action: 
-
-[![about PixieDust](https://img.youtube.com/vi/FoOHFlkCaXI/0.jpg)](https://www.youtube.com/watch?v=FoOHFlkCaXI) 
 
 
 ## Usage

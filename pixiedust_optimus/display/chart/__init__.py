@@ -17,11 +17,12 @@
 from ..display import *
 from pixiedust.utils.dataFrameAdapter import *
 from pixiedust.display.chart.renderers import PixiedustRenderer
+from pixiedust.display.streaming import StreamingDataAdapter
 import pixiedust
 
-myLogger = pixiedust.getLogger(__name__ )
+myLogger = pixiedust.getLogger(__name__)
 
-#bootstrap all the renderers
+# bootstrap all the renderers
 renderers = ["matplotlib", "bokeh", "seaborn", "google", "mapbox"]
 
 for renderer in renderers:
@@ -30,12 +31,13 @@ for renderer in renderers:
     except ImportError as e:
         myLogger.warn("Unable to import renderer {0}: {1}".format(renderer, str(e)))
 
+
 @PixiedustDisplayMeta()
 class ChartDisplayMeta(DisplayHandlerMeta):
     @addId
     def getMenuInfo(self, entity, dataHandler):
         if dataHandler is not None:
-            return [
+            infos = [
                 {"categoryId": "Chart", "title": "Bar Chart", "icon": "fa-bar-chart", "id": "barChart"},
                 {"categoryId": "Chart", "title": "Line Chart", "icon": "fa-line-chart", "id": "lineChart"},
                 {"categoryId": "Chart", "title": "Scatter Plot", "icon": "fa-circle", "id": "scatterPlot"},
@@ -43,7 +45,16 @@ class ChartDisplayMeta(DisplayHandlerMeta):
                 {"categoryId": "Chart", "title": "Map", "icon": "fa-globe", "id": "mapView"},
                 {"categoryId": "Chart", "title": "Histogram", "icon": "fa-table", "id": "histogram"}
             ]
+
+            infos = [info for info in infos if
+                     info["id"] in PixiedustRenderer.getHandlerIdList(dataHandler.isStreaming)]
+            accept = getattr(dataHandler, "accept", lambda id: True)
+            if not callable(accept):
+                accept = lambda id: True
+
+            return [info for info in infos if accept(info["id"]) is True]
+
         return []
 
-    def newDisplayHandler(self, options, entity):
-        return PixiedustRenderer.getRenderer(options, entity)
+    def newDisplayHandler(self, options, entity, dataHandler):
+        return PixiedustRenderer.getRenderer(options, entity, dataHandler.isStreaming)

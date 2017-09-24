@@ -28,11 +28,11 @@ with warnings.catch_warnings():
         ProxyInteractiveShell.instance()   
 
     #shortcut to logging
-    import pixiedust.utils.pdLogging as pdLogging
+    import pixiedust_optimus.utils.pdLogging as pdLogging
     logger = pdLogging.getPixiedustLogger()
     getLogger = pdLogging.getLogger
 
-    from pixiedust.utils.environment import Environment
+    from pixiedust_optimus.utils.environment import Environment
     if Environment.hasSpark:
         #shortcut to packageManager
         import pixiedust.packageManager as packageManager
@@ -43,11 +43,11 @@ with warnings.catch_warnings():
         try:
             from py4j.protocol import Py4JJavaError
             #javaBridge and scalaBridge only work in the driver, not an executor
-            from pixiedust.utils.javaBridge import *
-            from pixiedust.utils.scalaBridge import *
+            from pixiedust_optimus.utils.javaBridge import *
+            from pixiedust_optimus.utils.scalaBridge import *
 
             #shortcut to Spark job monitoring
-            from pixiedust.utils.sparkJobProgressMonitor import enableSparkJobProgressMonitor
+            from pixiedust_optimus.utils.sparkJobProgressMonitor import enableSparkJobProgressMonitor
             enableJobMonitor = enableSparkJobProgressMonitor
         except (NameError, Py4JJavaError):
             #IPython not available we must be in a spark executor
@@ -56,11 +56,11 @@ with warnings.catch_warnings():
     #automated import into the user namespace
     try:
         from IPython.core.getipython import get_ipython
-        import pixiedust.display
-        import pixiedust.services
+        import pixiedust_optimus.display
+        import pixiedust_optimus.services
         get_ipython().user_ns["display"]=display.display
 
-        from pixiedust.utils.sampleData import sampleData
+        from pixiedust_optimus.utils.sampleData import sampleData
         from pixiedust_optimus.utils import checkVersion
         checkVersion()
     except (NameError):
